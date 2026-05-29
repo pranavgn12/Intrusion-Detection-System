@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+    <title>IDS Dashboard</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+
+    <style>
+        .main-layout {
+            display: flex;
+            min-height: 100vh;
+            background: #0f1115;
+            color: #eaeaea;
+            font-family: Arial, sans-serif;
+        }
+
+        .sidebar {
+            width: 280px;
+            padding: 18px;
+            border-right: 1px solid rgba(255,255,255,0.08);
+            background: #141821;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .content {
+            flex: 1;
+            padding: 18px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .panel {
+            background: #171c26;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 16px;
+            box-sizing: border-box;
+            height: 100%;
+        }
+
+        .top-panels {
+            display: grid;
+            grid-template-columns: 4fr 1.2fr 1fr;
+            gap: 16px;
+            align-items: start;
+            margin-bottom: 16px;
+        }
+
+        .bottom-panels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            align-items: stretch;
+            margin-bottom: 16px;
+        }
+
+        .graph-panel canvas,
+        .detection-panel canvas {
+            width: 100%;
+            display: block;
+        }
+
+        .graph-panel canvas {
+            height: 340px;
+        }
+
+        .detection-panel canvas {
+            height: 260px;
+        }
+
+        .feature-legend {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+            max-height: 110px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.92rem;
+            white-space: nowrap;
+        }
+
+        .legend-swatch {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            display: inline-block;
+            flex: 0 0 auto;
+        }
+
+        .feature-panel {
+            min-width: 0;
+        }
+
+        #feature-area {
+            max-height: 482px;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+
+        .feature-row {
+                display: grid;
+    grid-template-columns: 0.85fr 0.15fr;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    min-width: 0;
+    grid-auto-flow: row;
+        }
+
+        .feature-row span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .confidence-list {
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+
+        .confidence-item {
+                display: flex;
+    justify-content: space-between;
+    /* gap: 10px; */
+    /* padding: 6px 0; */
+    /* border-bottom: 1px solid rgba(255,255,255,0.08); */
+    font-size: 15px;
+        }
+
+        .chart-meta {
+            margin-top: 8px;
+            font-size: 0.9rem;
+            opacity: 0.85;
+        }
+
+        .logs-panel {
+            min-height: 320px;
+        }
+
+        #logs {
+            max-height: 260px;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+
+        .log-line {
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            font-family: monospace;
+            font-size: 0.92rem;
+            word-break: break-word;
+        }
+
+        .sidebar h1,
+        .panel h2 {
+            margin-top: 0;
+        }
+
+        .attack-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .attack-title {
+            margin-bottom: 10px;
+            font-weight: 700;
+            word-break: break-word;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .button-row button {
+            flex: 1;
+        }
+
+        @media (max-width: 1100px) {
+            .top-panels,
+            .bottom-panels {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                width: 240px;
+            }
+        }
+
+        @media (max-width: 800px) {
+            .main-layout {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid rgba(255,255,255,0.08);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-layout">
+
+        <div class="sidebar">
+            <h1>IDS Panel</h1>
+
+            <div class="attack-list">
+                {% for name in scripts %}
+                <div class="attack-card">
+                    <div class="attack-title">{{ name }}</div>
+                    <div class="button-row">
+                        <button class="start-btn" onclick="startScript('{{ name }}')">Start</button>
+                        <button class="stop-btn" onclick="stopScript('{{ name }}')">Stop</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="content">
+
+            <div class="top-panels">
+
+                <div class="panel graph-panel">
+                    <h2>Realtime Feature History</h2>
+                    <canvas id="feature-chart"></canvas>
+                    <div class="chart-meta" id="feature-chart-meta">Waiting for live data...</div>
+                    <div id="feature-legend" class="feature-legend"></div>
+                </div>
+
+                <div class="panel feature-panel">
+                    <h2>Realtime Features</h2>
+                    <div id="feature-area"></div>
+                </div>
+
+                <div class="panel prediction-panel">
+                    <h2>Prediction</h2>
+
+                    <div class="prediction-main">
+                        <div class="prediction-label" id="prediction-label">Waiting...</div>
+                        <div class="prediction-confidence" id="prediction-confidence">Confidence: 0%</div>
+                    </div>
+
+                    <div class="confidence-list" id="confidence-list"></div>
+                </div>
+
+            </div>
+
+            <div class="bottom-panels">
+
+                <div class="panel detection-panel">
+                    <h2>Total Detected</h2>
+                    <canvas id="detection-chart"></canvas>
+                    <div class="chart-meta" id="detection-meta">No detections yet</div>
+                </div>
+
+                <div class="panel logs-panel">
+                    <h2>Recent Logs</h2>
+                    <div id="logs"></div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
